@@ -12,7 +12,7 @@ class OpenAIClientSingleton:
             cls._instance.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None
         return cls._instance
 
-    async def _call_api(self, prompt: str, model: str = "gpt-3.5-turbo") -> Tuple[str, int]:
+    async def _call_api(self, prompt: str, model: str = "gpt-4o-mini") -> Tuple[str, int]:
         if not self.client:
             raise ValueError("OPENAI_API_KEY is not configured.")
 

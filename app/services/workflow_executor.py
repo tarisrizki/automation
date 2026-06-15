@@ -9,7 +9,27 @@ class WorkflowExecutorService:
     MAX_RETRIES = 3
 
     @staticmethod
-    async def execute_workflow(workflow_id: int, run_id: int):
+    def _interpolate_params(params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+        result = {}
+        class SafeDict(dict):
+            def __missing__(self, key):
+                return "{" + key + "}"
+        safe_context = SafeDict(**context)
+
+        for k, v in params.items():
+            if isinstance(v, str):
+                try:
+                    result[k] = v.format_map(safe_context)
+                except Exception:
+                    result[k] = v
+            elif isinstance(v, dict):
+                result[k] = WorkflowExecutorService._interpolate_params(v, context)
+            else:
+                result[k] = v
+        return result
+
+    @staticmethod
+    async def execute_workflow(workflow_id: int, run_id: int, initial_context: Dict[str, Any] = None):
         async with AsyncSessionLocal() as session:
             run = await session.get(WorkflowRun, run_id)
             if not run: return
@@ -27,7 +47,7 @@ class WorkflowExecutorService:
             await session.commit()
 
             step_name = "Unknown"
-            context_data: Dict[str, Any] = {} 
+            context_data: Dict[str, Any] = initial_context.copy() if initial_context else {}
 
             try:
                 for i, step in enumerate(workflow.steps):
@@ -56,8 +76,9 @@ class WorkflowExecutorService:
                             # 2. Lookup Handler
                             handler = get_action_handler(action)
 
-                            # 3. Execute Handler
-                            output_val, tokens_used = await handler(integration_config, params, context_data)
+                            # 3. Execute Handler with Interpolated Params
+                            interpolated_params = WorkflowExecutorService._interpolate_params(params, context_data)
+                            output_val, tokens_used = await handler(integration_config, interpolated_params, context_data)
 
                             if tokens_used > 0:
                                 run.total_tokens += tokens_used

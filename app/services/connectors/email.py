@@ -11,15 +11,7 @@ class EmailConnector(BaseConnector):
         from_email = config.get("from_email", "noreply@example.com")
         to_email = params.get("to")
         subject = params.get("subject", "Workflow Notification")
-        template = params.get("body", "")
-
-        if not to_email:
-            raise ValueError("Missing 'to' address in params")
-
-        try:
-            body = template.format(**context_data)
-        except KeyError:
-            body = template
+        body = params.get("body", "")
 
         # SendGrid API v3 payload
         payload = {

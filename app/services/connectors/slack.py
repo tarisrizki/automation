@@ -8,14 +8,7 @@ class SlackConnector(BaseConnector):
         if not webhook_url:
             raise ValueError("Slack integration missing 'webhook_url' in config")
 
-        template = params.get("message", "Default Slack Message")
-        
-        # Format message with context data (lead data)
-        try:
-            message = template.format(**context_data)
-        except KeyError as e:
-            # Fallback if context is missing a key
-            message = template + f"\n[Format Error: Missing {e} in context]"
+        message = params.get("message", "Default Slack Message")
 
         payload = {"text": message}
 

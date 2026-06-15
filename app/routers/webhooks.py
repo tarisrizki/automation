@@ -60,7 +60,7 @@ async def trigger_webhook(
     await db.commit()
     await db.refresh(run)
 
-    background_tasks.add_task(WorkflowExecutorService.execute_workflow, workflow.id, run.id)
+    background_tasks.add_task(WorkflowExecutorService.execute_workflow, workflow.id, run.id, json_payload)
 
     # 7. Update WebhookLog
     webhook_log.status = "accepted"
